@@ -29,28 +29,18 @@ import zhTW from './locale/zh-tw';
 const localeMap: { [k: string]: Partial<typeof en> } = {
 	ar,
 	cs: cz,
-	da,
-	de,
-	en,
+	da, de, en,
 	'en-gb': enGB,
-	es,
-	fr,
-	hi,
-	id,
-	it,
-	ja,
-	ko,
-	nl,
+	es, fr, hi, id, it, ja, ko, nl,
 	nn: no,
-	pl,
-	pt,
+	pl, pt,
 	'pt-br': ptBR,
-	ro,
-	ru,
-	tr,
+	ro, ru, tr,
 	'zh-cn': zhCN,
 	'zh-tw': zhTW,
 };
+
+console.log("helper :", moment.locale(), localeMap);
 
 const locale = localeMap[moment.locale()];
 

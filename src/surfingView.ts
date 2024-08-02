@@ -1,11 +1,8 @@
 import {
 	Editor, HoverPopover,
-	htmlToMarkdown,
-	ItemView,
+	htmlToMarkdown, ItemView,
 	MarkdownView, Menu, MenuItem,
-	moment, Notice,
-	ViewStateResult,
-	WorkspaceLeaf
+	moment, Notice, ViewStateResult, WorkspaceLeaf
 } from "obsidian";
 import { HeaderBar } from "./component/HeaderBar";
 // @ts-ignore
@@ -61,11 +58,12 @@ export class SurfingView extends ItemView {
 		if (!isOpenInSameTab || state.url.startsWith("file://")) {
 			if (state.url.contains("bilibili")) {
 				for (let i = 0; i < app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID).length; i++) {
-					if (app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[i].getViewState().state.url.split('?t=')[0] === state.url.split('?t=')[0]) {
+					const leaf = app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[i];
+					if (leaf.getViewState().state.url.split('?t=')[0] === state.url.split('?t=')[0]) {
 						// @ts-ignore
-						app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[i].view.navigate(state.url, false, true);
-						(app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[i]).rebuildView();
-						app.workspace.setActiveLeaf((app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[i]));
+						leaf.view.navigate(state.url, false, true);
+						leaf.rebuildView();
+						app.workspace.setActiveLeaf(leaf);
 						return;
 					}
 				}
@@ -87,23 +85,31 @@ export class SurfingView extends ItemView {
 				state
 			});
 
-
 			return;
 		}
 
-		const leafId = app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID).length ? localStorage.getItem("web-browser-leaf-id") : app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[0]?.id;
+		const leafId = app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID).length
+			? localStorage.getItem("web-browser-leaf-id")
+			: app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[0]?.id;
+
 		if (!leafId) {
 			// Check if current leaf is empty view or markdown view.
 			let activeViewLeaf: WorkspaceLeaf | undefined;
 			activeViewLeaf = app.workspace.getActiveViewOfType(MarkdownView)?.leaf;
 			const currentViewType = app.workspace.getActiveViewOfType(ItemView)?.getViewType();
-			if (!activeViewLeaf) activeViewLeaf = (currentViewType === "empty" || currentViewType === "surfing-bookmark-manager") ? app.workspace.getActiveViewOfType(ItemView)?.leaf : undefined;
+			if (!activeViewLeaf) activeViewLeaf =
+				(currentViewType === "empty" || currentViewType === "surfing-bookmark-manager")
+					? app.workspace.getActiveViewOfType(ItemView)?.leaf
+					: undefined;
 			if (!activeViewLeaf) return;
 
-			const leaf = currentViewType === "empty" ? activeViewLeaf : app.workspace.createLeafBySplit(activeViewLeaf) as WorkspaceLeaf;
+			const leaf = currentViewType === "empty"
+				? activeViewLeaf
+				: app.workspace.createLeafBySplit(activeViewLeaf) as WorkspaceLeaf;
+
 			localStorage.setItem("web-browser-leaf-id", leaf.id);
 
-			leaf.setViewState({type: WEB_BROWSER_VIEW_ID, active: true, state});
+			leaf.setViewState({ type: WEB_BROWSER_VIEW_ID, active: true, state });
 
 			if (!(leaf.view.getViewType() === "empty")) {
 				leaf.rebuildView();
@@ -111,7 +117,9 @@ export class SurfingView extends ItemView {
 
 			leaf.setPinned(true);
 			leaf.tabHeaderInnerTitleEl.parentElement?.parentElement?.addClass("same-tab");
+
 			return;
+
 		} else {
 
 			if (state.active != undefined && state.active == false) {
@@ -128,12 +136,8 @@ export class SurfingView extends ItemView {
 				const newLeafID = app.workspace.getLeavesOfType(WEB_BROWSER_VIEW_ID)[0]?.id;
 				if (newLeafID) {
 					localStorage.setItem("web-browser-leaf-id", newLeafID);
-
-
 					(app.workspace.getLeafById(newLeafID)?.view as SurfingView).navigate(state.url, true);
 					app.workspace.getLeafById(newLeafID)?.rebuildView();
-
-
 					return;
 				}
 			}
@@ -450,7 +454,7 @@ export class SurfingView extends ItemView {
 						modified: moment().valueOf(),
 					});
 
-					await saveJson({bookmarks: bookmarks, categories: jsonData.categories});
+					await saveJson({ bookmarks: bookmarks, categories: jsonData.categories });
 
 					updateBookmarkBar(bookmarks, jsonData.categories, true);
 				} else {
@@ -604,7 +608,7 @@ export class SurfingView extends ItemView {
 					item.setIcon('search');
 					item.onClick(() => {
 						try {
-							SurfingView.spawnWebBrowserView(true, {url: params.selectionText});
+							SurfingView.spawnWebBrowserView(true, { url: params.selectionText });
 						} catch (err) {
 							console.error('Failed to copy: ', err);
 						}
@@ -758,10 +762,10 @@ export class SurfingView extends ItemView {
 		ch.port1.onmessage = (e: any) => {
 			if (e.data === 'contextmenu' || e.data?.startsWith('contextmenu')) {
 				this.menu?.close();
-				const {x, y} = e.data.split(' ').length > 1 ? {
+				const { x, y } = e.data.split(' ').length > 1 ? {
 					x: e.data.split(' ')[1],
 					y: e.data.split(' ')[2]
-				} : {x: e.x, y: e.y};
+				} : { x: e.x, y: e.y };
 				const realRect = this.webviewEl.getClientRects();
 				const rect: {
 					x: number,
@@ -947,7 +951,7 @@ export class SurfingView extends ItemView {
 	}
 
 	getState(): WebBrowserViewState {
-		return {url: this.currentUrl};
+		return { url: this.currentUrl };
 	}
 
 	getCurrentTitle(): string {

@@ -1,30 +1,33 @@
 import {
-	addIcon, App,
-	Editor, editorInfoField,
+	addIcon, App, Editor, editorInfoField,
 	EventRef, HoverParent, HoverPopover,
 	ItemView, Keymap, MarkdownPostProcessorContext,
-	MarkdownPreviewRenderer,
-	MarkdownPreviewRendererStatic,
-	MarkdownView,
-	Menu, Modal, moment,
-	Notice, parseYaml,
-	Plugin, PopoverState, requireApiVersion,
-	setIcon,
-	TFile,
+	MarkdownPreviewRenderer, MarkdownPreviewRendererStatic,
+	MarkdownView, Menu, Modal, moment,
+	Notice, parseYaml, Plugin, PopoverState, requireApiVersion,
+	setIcon, TFile,
 } from "obsidian";
 import { HeaderBar } from "./component/HeaderBar";
 import { SurfingView, WEB_BROWSER_VIEW_ID } from "./surfingView";
-import { HTML_FILE_EXTENSIONS, SurfingFileView, WEB_BROWSER_FILE_VIEW_ID } from "./surfingFileView";
+import {
+	HTML_FILE_EXTENSIONS, SurfingFileView, WEB_BROWSER_FILE_VIEW_ID
+} from "./surfingFileView";
 import { t } from "./translations/helper";
 import { around } from "monkey-around";
-import { DEFAULT_SETTINGS, SEARCH_ENGINES, SurfingSettings, SurfingSettingTab } from "./surfingPluginSetting";
+import {
+	DEFAULT_SETTINGS, SEARCH_ENGINES,
+	SurfingSettings, SurfingSettingTab
+} from "./surfingPluginSetting";
 import { InPageSearchBar } from "./component/inPageSearchBar";
 import { tokenType } from "./types/obsidian";
 import { checkIfWebBrowserAvailable, isEmailLink, isNormalLink } from "./utils/url";
 import { InPageIconList } from "./component/InPageIconList";
 import { InNodeWebView } from "./component/InNodeWebView";
 import { BookMarkBar, updateBookmarkBar } from "./component/BookMarkBar/BookMarkBar";
-import { SurfingBookmarkManagerView, WEB_BROWSER_BOOKMARK_MANAGER_ID } from './surfingBookmarkManager';
+import {
+	SurfingBookmarkManagerView,
+	WEB_BROWSER_BOOKMARK_MANAGER_ID
+} from './surfingBookmarkManager';
 import { EmbededWebView } from "./component/EmbededWebView";
 import { loadJson, saveJson } from "./utils/json";
 import { hashCode, nonElectronGetPageTitle } from "./component/BookmarkManager/utils";
@@ -49,15 +52,21 @@ export default class SurfingPlugin extends Plugin {
 		this.checkWebBrowser();
 
 		this.settingsTab = new SurfingSettingTab(this.app, this);
+
 		this.addSettingTab(this.settingsTab);
 
 		this.registerView(WEB_BROWSER_VIEW_ID, (leaf) => new SurfingView(leaf, this));
+
 		this.registerView(WEB_BROWSER_FILE_VIEW_ID, (leaf) => new SurfingFileView(leaf));
+
 		this.settings.enableTreeView && this.registerView(WEB_BROWSER_TAB_TREE_ID, (leaf) => new TabTreeView(leaf, this));
-		if (this.settings.bookmarkManager.openBookMark) this.registerView(WEB_BROWSER_BOOKMARK_MANAGER_ID, (leaf) => new SurfingBookmarkManagerView(leaf, this));
+
+		if (this.settings.bookmarkManager.openBookMark)
+			this.registerView(WEB_BROWSER_BOOKMARK_MANAGER_ID, (leaf) => new SurfingBookmarkManagerView(leaf, this));
 
 		try {
-			if (this.settings.enableHtmlPreview) this.registerExtensions(HTML_FILE_EXTENSIONS, WEB_BROWSER_FILE_VIEW_ID);
+			if (this.settings.enableHtmlPreview)
+				this.registerExtensions(HTML_FILE_EXTENSIONS, WEB_BROWSER_FILE_VIEW_ID);
 		} catch (error) {
 			new Notice(`File extensions ${HTML_FILE_EXTENSIONS} had been registered by other plugin!`);
 		}
@@ -72,11 +81,13 @@ export default class SurfingPlugin extends Plugin {
 		this.patchMarkdownView();
 		this.patchWindowOpen();
 		this.patchMarkdownView();
+
 		if (requireApiVersion("1.0.4")) this.patchEditMode();
 
 		this.onLayoutChangeEventRef = this.app.workspace.on("layout-change", () => {
 			const activeView = this.app.workspace.getActiveViewOfType(ItemView);
 			if (activeView) this.addHeaderAndSearchBar(activeView);
+			// console.log("onLayoutChangeEventRef :", activeView);
 		});
 
 		this.registerCommands();
@@ -95,6 +106,9 @@ export default class SurfingPlugin extends Plugin {
 		if (this.settings.bookmarkManager.openBookMark) {
 			this.registerRibbon();
 		}
+
+		// this.registerObsidianProtocolHandler("search", (e) => console.log(e));
+
 	}
 
 
@@ -118,27 +132,33 @@ export default class SurfingPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(this.onLayoutReady.bind(this));
 	}
 
-	onLayoutReady(): void {
+	async onLayoutReady(): Promise<void> {
 		if (!this.settings.enableTreeView) return;
 		if (this.app.workspace.getLeavesOfType(WEB_BROWSER_TAB_TREE_ID).length) {
+			console.log("openTabTreeView :", 0);
 			return;
 		}
-		this.app.workspace.getLeftLeaf(false).setViewState({
+		console.log("openTabTreeView :", 1);
+		await this.app.workspace.getLeftLeaf(false).setViewState({
 			type: WEB_BROWSER_TAB_TREE_ID,
+			active: true,
 		});
+		console.log("openTabTreeView :", 2);
 	}
 
 	private registerRibbon() {
 		this.addRibbonIcon('bookmark', WEB_BROWSER_BOOKMARK_MANAGER_ID, async () => {
 			const workspace = this.app.workspace;
 			workspace.detachLeavesOfType(WEB_BROWSER_BOOKMARK_MANAGER_ID);
-			await workspace.getLeaf(false).setViewState({type: WEB_BROWSER_BOOKMARK_MANAGER_ID});
+			await workspace.getLeaf(false).setViewState({ type: WEB_BROWSER_BOOKMARK_MANAGER_ID });
 			workspace.revealLeaf(workspace.getLeavesOfType(WEB_BROWSER_BOOKMARK_MANAGER_ID)[0]);
 		});
 	}
 
 	// Add header bar to empty view.
 	private addHeaderAndSearchBar(currentView: ItemView) {
+		// console.log("addHeaderAndSearchBar :", currentView);
+
 		if (!currentView) return;
 		// Check if new leaf's view is empty, else return.
 		if (currentView.getViewType() != "empty" && currentView.getViewType() !== 'home-tab-view') return;
@@ -149,7 +169,7 @@ export default class SurfingPlugin extends Plugin {
 			// Focus on current inputEl
 			if (!this.settings.showSearchBarInPage) headerBar.focus();
 			headerBar.addOnSearchBarEnterListener((url: string) => {
-				SurfingView.spawnWebBrowserView(false, {url});
+				SurfingView.spawnWebBrowserView(false, { url });
 			});
 		}
 
@@ -157,7 +177,10 @@ export default class SurfingPlugin extends Plugin {
 		if (this.settings.randomBackground) {
 			currentView.contentEl.toggleClass("wb-random-background", true);
 		}
-		const emptyStateEl = (currentView.contentEl.children[0] as HTMLElement).hasClass("empty-state") ? currentView.contentEl.children[0] as HTMLElement : null;
+		const emptyStateEl = (currentView.contentEl.children[0] as HTMLElement)
+			.hasClass("empty-state")
+			? currentView.contentEl.children[0] as HTMLElement
+			: null;
 		if (!emptyStateEl) return;
 		if (!emptyStateEl.hasClass("wb-page-search-bar") && this.settings.showSearchBarInPage) {
 			const inPageContainerEl = emptyStateEl.createEl('div', {
@@ -173,15 +196,13 @@ export default class SurfingPlugin extends Plugin {
 			if (this.settings.useIconList) {
 				new InPageIconList(emptyStateEl, currentView, this);
 				const emptyActionsEl = emptyStateEl.querySelector(".empty-state-container");
-
 				if (emptyActionsEl) emptyActionsEl.addClass("wb-empty-actions");
 			}
-
 
 			inPageSearchBar.focus();
 			inPageSearchBar.addOnSearchBarEnterListener((url: string) => {
 				if (url.trim() === '' || this.settings.showOtherSearchEngines) return;
-				SurfingView.spawnWebBrowserView(false, {url});
+				SurfingView.spawnWebBrowserView(false, { url });
 			});
 		}
 	}
@@ -206,14 +227,13 @@ export default class SurfingPlugin extends Plugin {
 
 		if (app.plugins.getPlugin('home-tab')) return;
 		// Remove in page search bar
-		if (currentView.contentEl.children[0].hasClass("wb-page-search-bar") && this.settings.showSearchBarInPage) {
+		if (currentView.contentEl.children[0].hasClass("wb-page-search-bar")
+			&& this.settings.showSearchBarInPage) {
 			currentView.contentEl.children[0].children[1]?.detach();
 			currentView.contentEl.children[0].children[1]?.empty();
 			currentView.contentEl.children[0].children[1]?.detach();
 			currentView.contentEl.children[0].removeClass("wb-page-search-bar");
 		}
-
-
 	}
 
 	// Update all leaf contains empty view when restart Obsidian
@@ -235,10 +255,18 @@ export default class SurfingPlugin extends Plugin {
 		if (!this.settings.openInObsidianWeb) return;
 		this.registerObsidianProtocolHandler("web-open", async (e) => {
 			let url = e.url;
+
+			console.log("registerObsidianProtocolHandler :", e, e.url);
+
 			if (!url) return;
-			if (decodeURI(url) !== url) url = decodeURI(url).toString().replace(/\s/g, "%20");
-			if (this.settings.bookmarkManager.saveBookMark) new SaveBookmarkModal(this.app, url, this).open();
-			else SurfingView.spawnWebBrowserView(true, {url: url});
+
+			if (decodeURI(url) !== url)
+				url = decodeURI(url).toString().replace(/\s/g, "%20");
+
+			if (this.settings.bookmarkManager.saveBookMark)
+				new SaveBookmarkModal(this.app, url, this).open();
+			else
+				SurfingView.spawnWebBrowserView(true, { url: url });
 		});
 	}
 
@@ -257,7 +285,7 @@ export default class SurfingPlugin extends Plugin {
 								.setTitle(t('Open With Surfing'))
 								.onClick(() => {
 									// @ts-ignore
-									SurfingView.spawnWebBrowserView(true, {url: token.text});
+									SurfingView.spawnWebBrowserView(true, { url: token.text });
 								});
 						}).addItem((item) => {
 							item.setIcon('surfing')
@@ -310,7 +338,7 @@ export default class SurfingPlugin extends Plugin {
 								.setTitle(engine.name)
 								.onClick(() => {
 									// @ts-ignore
-									SurfingView.spawnWebBrowserView(true, {url: engine.url + selection});
+									SurfingView.spawnWebBrowserView(true, { url: engine.url + selection });
 								});
 						});
 					});
@@ -439,7 +467,7 @@ export default class SurfingPlugin extends Plugin {
 				searchBarEl.onLoad();
 
 				searchBarEl.addOnSearchBarEnterListener((url: string) => {
-					SurfingView.spawnWebBrowserView(false, {url});
+					SurfingView.spawnWebBrowserView(false, { url });
 				});
 				searchBarEl.focus();
 			}
@@ -455,7 +483,7 @@ export default class SurfingPlugin extends Plugin {
 					const selection = editor.getSelection();
 
 					// @ts-ignore
-					SurfingView.spawnWebBrowserView(true, {url: engine.url + selection});
+					SurfingView.spawnWebBrowserView(true, { url: engine.url + selection });
 				}
 			});
 		});
@@ -576,6 +604,9 @@ export default class SurfingPlugin extends Plugin {
 					if (!(e.target as HTMLElement).hasClass('cm-underline') && !(e.target as HTMLElement).hasClass('external-link')) return;
 
 					const editorInfo = editorView.state.field(editorInfoField);
+
+					console.log("registerEditorExtension :", editorInfo);
+
 					const editor: Editor = (editorInfo as any).editMode?.editor;
 
 					const pos = editorView.posAtDOM(<Node>e.target);
@@ -621,11 +652,13 @@ export default class SurfingPlugin extends Plugin {
 			const pagePreview = this.app.internalPlugins.plugins['page-preview'];
 			this.register(around(pagePreview.instance, {
 				onLinkHover(old: any) {
-					return function (hoverParent: HoverParent, targetEl: HTMLElement | null, linktext: string, sourcePath: string, state: any, ...args: any[]) {
+					return function (hoverParent: HoverParent, targetEl: HTMLElement | null,
+						linktext: string, sourcePath: string, state: any, ...args: any[]) {
 						if (linktext.startsWith('http://') || linktext.startsWith('https://')) {
 
-							let {hoverPopover} = hoverParent;
-							if (hoverPopover && hoverPopover.state !== (PopoverState as any).Hidden && hoverPopover.targetEl === targetEl) {
+							let { hoverPopover } = hoverParent;
+							if (hoverPopover && hoverPopover.state !== (PopoverState as any).Hidden
+								&& hoverPopover.targetEl === targetEl) {
 								return;
 							}
 							hoverPopover = new HoverPopover(hoverParent, targetEl);
@@ -661,9 +694,12 @@ export default class SurfingPlugin extends Plugin {
 
 	private checkWebBrowser() {
 		const webBrowser = app.plugins.getPlugin("obsidian-web-browser");
-		if (webBrowser) new Notice(t("You enabled obsidian-web-browser plugin, please disable it/disable surfing to avoid conflict."), 4000);
-		const tabHeader = app.vault.getConfig("showViewHeader");
-		if (!tabHeader) new Notice(t("You didn't enable show tab title bar in apperance settings, please enable it to use surfing happily."), 4000);
+		if (webBrowser)
+			new Notice(t("You enabled obsidian-web-browser plugin, please disable it/disable surfing to avoid conflict."), 4000);
+
+		const tabHeader = app.vault.getConfig("showViewHeader"); // setting > 外观 > 显示 > 标签页标题栏
+		if (!tabHeader)
+			new Notice(t("You didn't enable show tab title bar in apperance settings, please enable it to use surfing happily."), 4000);
 	}
 
 	// TODO: Licat said that this method will be changed in the future.
@@ -679,7 +715,7 @@ export default class SurfingPlugin extends Plugin {
 							}
 							const url = (token.text !== decodeURI(token.text)) ? decodeURI(token.text) : token.text;
 							if (checkIfWebBrowserAvailable(url)) {
-								SurfingView.spawnWebBrowserView(true, {url: url});
+								SurfingView.spawnWebBrowserView(true, { url: url });
 							} else {
 								window.open(url, '_blank', 'external');
 							}
@@ -714,7 +750,7 @@ export default class SurfingPlugin extends Plugin {
 								}
 								const url = (token.text !== decodeURI(token.text)) ? decodeURI(token.text) : token.text;
 								if (checkIfWebBrowserAvailable(url)) {
-									SurfingView.spawnWebBrowserView(true, {url: url});
+									SurfingView.spawnWebBrowserView(true, { url: url });
 								} else {
 									window.open(url, '_blank', 'external');
 								}
@@ -766,13 +802,15 @@ export default class SurfingPlugin extends Plugin {
 
 					// 2. Perform default behavior if the url isn't "http://" or "https://"
 					// No need anymore
-					if ((urlString === "about:blank" && features) || !checkIfWebBrowserAvailable(urlString) || (urlString !== "about:blank" && (target === "_blank" || target === "_self")) || features === 'external') {
+					if ((urlString === "about:blank" && features) || !checkIfWebBrowserAvailable(urlString)
+						|| (urlString !== "about:blank" && (target === "_blank" || target === "_self"))
+						|| features === 'external') {
 						return next(url, target, features);
 					}
 
 					if (urlString && !target && !features && !currentUrlOpened()) {
 						console.log("Obsidian-Surfing: open url in web browser view");
-						SurfingView.spawnWebBrowserView(true, {url: urlString});
+						SurfingView.spawnWebBrowserView(true, { url: urlString });
 
 						preventSameUrl();
 					}
@@ -819,7 +857,7 @@ export default class SurfingPlugin extends Plugin {
 								}
 
 								if (checkIfWebBrowserAvailable(url) && !currentUrlOpened()) {
-									SurfingView.spawnWebBrowserView(true, {url: url});
+									SurfingView.spawnWebBrowserView(true, { url: url });
 
 									preventSameUrl();
 								} else {
@@ -876,7 +914,7 @@ export default class SurfingPlugin extends Plugin {
 										window.open(this.value, "_blank");
 										return;
 									}
-									SurfingView.spawnWebBrowserView(true, {url: this.value});
+									SurfingView.spawnWebBrowserView(true, { url: this.value });
 									return;
 								} else if (isEmailLink(this.value)) {
 									window.open("mailto:" + this.value, "_blank");
@@ -1026,12 +1064,14 @@ export default class SurfingPlugin extends Plugin {
 		const patchEmptyView = () => {
 			const leaf = this.app.workspace.getLeavesOfType("empty").first();
 			const view = leaf?.view;
+
 			// eslint-disable-next-line @typescript-eslint/no-this-alias
 			const self = this;
 
 			if (!view) return false;
 
 			const EmptyView = view.constructor;
+
 			this.register(
 				around(EmptyView.prototype, {
 					onOpen: (next) =>
@@ -1052,7 +1092,6 @@ export default class SurfingPlugin extends Plugin {
 									self.app.setting.openTabById('surfing');
 								});
 								setIcon(iconEl, 'settings');
-
 							}
 							return next.call(this, ...args);
 						},
@@ -1063,6 +1102,7 @@ export default class SurfingPlugin extends Plugin {
 			console.log("Obsidian-Surfing: empty view patched");
 			return true;
 		};
+
 		this.app.workspace.onLayoutReady(() => {
 			if (!patchEmptyView()) {
 				const evt = app.workspace.on("layout-change", () => {
@@ -1206,14 +1246,14 @@ class SaveBookmarkModal extends Modal {
 	}
 
 	onOpen() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.parentElement?.classList.add("wb-bookmark-modal");
 
-		contentEl.createEl("h2", {text: "Save Bookmark"});
+		contentEl.createEl("h2", { text: "Save Bookmark" });
 
-		const btnContainerEl = contentEl.createDiv({cls: "wb-bookmark-modal-btn-container"});
+		const btnContainerEl = contentEl.createDiv({ cls: "wb-bookmark-modal-btn-container" });
 
-		const saveBtnEl = btnContainerEl.createEl("button", {text: "Save"});
+		const saveBtnEl = btnContainerEl.createEl("button", { text: "Save" });
 		saveBtnEl.onclick = async () => {
 			this.close();
 			const urlData = await nonElectronGetPageTitle(this.url);
@@ -1236,21 +1276,21 @@ class SaveBookmarkModal extends Modal {
 				modified: moment().valueOf(),
 			});
 
-			await saveJson({bookmarks: bookmarks, categories: data.categories});
+			await saveJson({ bookmarks: bookmarks, categories: data.categories });
 
 			updateBookmarkBar(bookmarks, data.categories, true);
 		};
 
-		const openBtnEl = btnContainerEl.createEl("button", {text: "Open"});
+		const openBtnEl = btnContainerEl.createEl("button", { text: "Open" });
 		openBtnEl.onclick = () => {
 			this.close();
 
-			SurfingView.spawnWebBrowserView(true, {url: this.url});
+			SurfingView.spawnWebBrowserView(true, { url: this.url });
 		};
 	}
 
 	onClose() {
-		const {contentEl} = this;
+		const { contentEl } = this;
 		contentEl.empty();
 	}
 }
