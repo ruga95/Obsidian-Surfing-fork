@@ -127,6 +127,10 @@ export const DEFAULT_SETTINGS: SurfingSettings = {
 // Add search engines here for the future used.
 export const SEARCH_ENGINES: SearchEngine[] = [
 	{
+		name: 'Naver中文',
+		url: 'https://zh.dict.naver.com/#/search?query=',
+	},
+	{
 		name: 'Google',
 		url: 'https://www.google.com/search?q=',
 	},

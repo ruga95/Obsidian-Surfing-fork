@@ -135,15 +135,14 @@ export default class SurfingPlugin extends Plugin {
 	async onLayoutReady(): Promise<void> {
 		if (!this.settings.enableTreeView) return;
 		if (this.app.workspace.getLeavesOfType(WEB_BROWSER_TAB_TREE_ID).length) {
-			console.log("openTabTreeView :", 0);
+			console.log("openTabTreeView :", "TabTreeView 已被打开");
 			return;
 		}
-		console.log("openTabTreeView :", 1);
 		await this.app.workspace.getLeftLeaf(false).setViewState({
 			type: WEB_BROWSER_TAB_TREE_ID,
 			active: true,
 		});
-		console.log("openTabTreeView :", 2);
+		console.log("openTabTreeView :", "在作区分打开 TabTreeView");
 	}
 
 	private registerRibbon() {
