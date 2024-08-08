@@ -142,7 +142,7 @@ export default class SurfingPlugin extends Plugin {
 			type: WEB_BROWSER_TAB_TREE_ID,
 			active: true,
 		});
-		console.log("openTabTreeView :", "在作区分打开 TabTreeView");
+		console.log("openTabTreeView :", "在左区分打开 TabTreeView");
 	}
 
 	private registerRibbon() {
@@ -255,7 +255,7 @@ export default class SurfingPlugin extends Plugin {
 		this.registerObsidianProtocolHandler("web-open", async (e) => {
 			let url = e.url;
 
-			console.log("registerObsidianProtocolHandler :", e, e.url);
+			console.log("registerObsidianProtocolHandler :", e);
 
 			if (!url) return;
 
@@ -581,6 +581,9 @@ export default class SurfingPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor(
 			"surfing", (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 				const yaml = parseYaml(source);
+
+				// console.log("registerMarkdownCodeBlockProcessor :", yaml);
+				
 				if (!yaml || !yaml.url) return;
 
 				const url = yaml.url;
