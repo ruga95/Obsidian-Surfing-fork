@@ -605,9 +605,9 @@ export default class SurfingPlugin extends Plugin {
 				mouseover: (e: MouseEvent, editorView: EditorView) => {
 					if (!(e.target as HTMLElement).hasClass('cm-underline') && !(e.target as HTMLElement).hasClass('external-link')) return;
 
-					const editorInfo = editorView.state.field(editorInfoField);
+					const editorInfo = editorView.state.field(editorInfoField); 
 
-					console.log("registerEditorExtension :", editorInfo);
+					// console.log("registerHoverPopover :", editorView, editorInfo, editorInfoField, e.target);
 
 					const editor: Editor = (editorInfo as any).editMode?.editor;
 
@@ -667,8 +667,8 @@ export default class SurfingPlugin extends Plugin {
 							hoverPopover.hoverEl.addClass('surfing-hover-popover');
 
 							setTimeout(() => {
-								if (hoverPopover!.state !== (PopoverState as any).Hidden) {
-									const parentEl = hoverPopover!.hoverEl.createDiv('surfing-hover-popover-container');
+								if (hoverPopover.state !== (PopoverState as any).Hidden) {
+									const parentEl = hoverPopover.hoverEl.createDiv('surfing-hover-popover-container');
 									const webView = new PopoverWebView(parentEl, linktext);
 									webView.onload();
 								}
