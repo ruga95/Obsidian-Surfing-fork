@@ -74,9 +74,9 @@ export default class SurfingPlugin extends Plugin {
 		this.openTabTreeView();
 		this.updateEmptyLeaves(false);
 		this.registerContextMenu();
-		this.registerCustomURI();
+		this.registerCustomURI(); // ruga
 		this.registerCodeBlock();
-		this.registerHoverPopover();
+		this.registerHoverPopover(); // ruga
 
 		this.patchMarkdownView();
 		this.patchWindowOpen();
